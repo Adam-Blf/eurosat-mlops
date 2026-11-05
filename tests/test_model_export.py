@@ -28,3 +28,14 @@ def test_onnx_output_shape_with_dynamic_batch(exported):
 def test_onnx_matches_pytorch(exported):
     model, path = exported
     assert max_logit_gap(model, path) < 1e-3
+
+
+def test_classifier_returns_a_distribution_over_ten_classes(exported):
+    from eurosat_mlops.api.inference import Classifier
+
+    _, path = exported
+    image = np.random.default_rng(0).integers(0, 256, (IMAGE_SIZE, IMAGE_SIZE, 3), dtype=np.uint8)
+    result = Classifier(path, "test").predict(image)
+    assert result.label in CLASSES
+    assert len(result.probabilities) == len(CLASSES)
+    assert abs(sum(result.probabilities.values()) - 1.0) < 1e-3
