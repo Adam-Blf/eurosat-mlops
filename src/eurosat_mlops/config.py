@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     model_alias: str = "production"
     cors_origins: str = "http://127.0.0.1:8080"
     max_upload_bytes: int = Field(default=2_000_000, ge=1_000)
+    rate_limit_per_minute: int = Field(default=1200, ge=0)
     drift_window: int = Field(default=200, ge=20)
 
     def token_map(self) -> dict[str, str]:

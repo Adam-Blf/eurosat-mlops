@@ -39,3 +39,4 @@ crash.log
 # Local runtime
 *.sqlite
 *.db
+models/*.json
