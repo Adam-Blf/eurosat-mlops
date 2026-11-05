@@ -124,6 +124,20 @@ services:
     depends_on:
       - api
 
+  # docker compose --profile loadtest run --rm loadtest -u 16 -r 4 -t 60s --csv results/run
+  loadtest:
+    profiles: [loadtest]
+    build:
+      context: .
+      dockerfile: docker/loadtest.Dockerfile
+    image: ghcr.io/adam-blf/eurosat-loadtest:${EUROSAT_VERSION:-local}
+    environment:
+      LOAD_TOKENS: ${API_TOKENS:-alice:demo-token-alice,bob:demo-token-bob}
+    volumes:
+      - ./loadtest/results:/load/results
+    depends_on:
+      - gateway
+
 volumes:
   pgdata:
   mlartifacts:
