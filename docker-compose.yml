@@ -1,0 +1,130 @@
+# One command starts everything: docker compose up --build
+# Demo credentials below are public placeholders. Override them with a .env file
+# (see .env.example); docker-compose.prod.yml refuses to start without real values.
+name: eurosat
+
+x-api-env: &api-env
+  API_TOKENS: ${API_TOKENS:-alice:demo-token-alice,bob:demo-token-bob}
+  ADMIN_TOKEN: ${ADMIN_TOKEN:-demo-token-admin}
+  DATABASE_URL: postgresql+psycopg2://eurosat:${POSTGRES_PASSWORD:-demo-db-password}@postgres:5432/eurosat
+  MODEL_SOURCE: ${MODEL_SOURCE:-mlflow}
+  MLFLOW_TRACKING_URI: http://mlflow:5000
+  MODEL_NAME: ${MODEL_NAME:-eurosat-classifier}
+  MODEL_ALIAS: ${MODEL_ALIAS:-production}
+  CORS_ORIGINS: http://127.0.0.1:${GATEWAY_PORT:-8080},http://localhost:${GATEWAY_PORT:-8080}
+  RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-1200}
+
+x-hardening: &hardening
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+services:
+  postgres:
+    image: postgres:16.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: eurosat
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-demo-db-password}
+      POSTGRES_DB: eurosat
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/10-mlflow.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eurosat -d eurosat"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: docker/mlflow.Dockerfile
+    image: ghcr.io/adam-blf/eurosat-mlflow:${EUROSAT_VERSION:-local}
+    restart: unless-stopped
+    <<: *hardening
+    command:
+      - mlflow
+      - server
+      - --host=0.0.0.0
+      - --port=5000
+      - --backend-store-uri=postgresql+psycopg2://eurosat:${POSTGRES_PASSWORD:-demo-db-password}@postgres:5432/mlflow
+      - --artifacts-destination=/mlartifacts
+      - --serve-artifacts
+      - --allowed-hosts=mlflow:5000,mlflow,127.0.0.1:5000,localhost:5000
+    ports:
+      - "127.0.0.1:${MLFLOW_PORT:-5000}:5000"
+    volumes:
+      - mlartifacts:/mlartifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  registrar:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    image: ghcr.io/adam-blf/eurosat-api:${EUROSAT_VERSION:-local}
+    <<: *hardening
+    restart: "no"
+    command:
+      - python
+      - -m
+      - eurosat_mlops.registry
+      - bootstrap
+      - --tracking-uri=http://mlflow:5000
+      - --onnx=models/release/eurosat_int8.onnx
+      - --reference=models/release/reference_stats.json
+      - --metrics=models/release/metrics.json
+      - --note=release
+    depends_on:
+      mlflow:
+        condition: service_healthy
+
+  api:
+    image: ghcr.io/adam-blf/eurosat-api:${EUROSAT_VERSION:-local}
+    restart: unless-stopped
+    <<: *hardening
+    environment: *api-env
+    deploy:
+      replicas: ${API_REPLICAS:-2}
+    depends_on:
+      registrar:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/gateway.Dockerfile
+    image: ghcr.io/adam-blf/eurosat-gateway:${EUROSAT_VERSION:-local}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - api
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  mlartifacts:
+  promdata:
