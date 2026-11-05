@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EuroSAT - Quel terrain voit le satellite ?</title>
+  <meta name="description" content="Classification d'occupation du sol sur images satellite Sentinel-2, 10 classes.">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <p class="kicker">Sentinel-2, 64 x 64 pixels, 10 classes</p>
+      <h1>Quel terrain voit le satellite ?</h1>
+    </div>
+    <form class="token" id="token-form" autocomplete="off">
+      <label for="token">Jeton d'accès</label>
+      <input id="token" name="token" type="password" spellcheck="false" placeholder="Collez votre jeton">
+    </form>
+  </header>
+
+  <main class="grid">
+    <section class="panel" aria-labelledby="drop-title">
+      <h2 id="drop-title">Votre image</h2>
+      <label class="drop" id="drop" for="file" tabindex="0">
+        <span class="drop-icon" id="drop-icon" aria-hidden="true"></span>
+        <span class="drop-text" id="drop-text">Déposez une image ici, ou cliquez pour en choisir une</span>
+        <img id="preview" alt="Aperçu de l'image envoyée" hidden>
+        <input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/tiff" hidden>
+      </label>
+      <button class="go" id="go" type="button" disabled>Découvrir le type de terrain</button>
+      <p class="hint" id="status" role="status"></p>
+    </section>
+
+    <section class="panel result" aria-labelledby="res-title" aria-live="polite">
+      <h2 id="res-title">Ce que le modèle répond</h2>
+      <div id="empty" class="empty">Le verdict apparaît ici, avec la confiance du modèle pour chacune des dix classes.</div>
+      <div id="answer" hidden>
+        <p class="label" id="label"></p>
+        <p class="confidence"><span id="confidence"></span> de confiance</p>
+        <ol class="bars" id="bars"></ol>
+        <p class="meta" id="meta"></p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
