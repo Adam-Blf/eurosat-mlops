@@ -49,10 +49,14 @@ packages = ["src/eurosat_mlops"]
 line-length = 100
 target-version = "py310"
 src = ["src", "tests", "loadtest", "scripts"]
+extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "S", "SIM"]
 ignore = ["S101"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.File"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S105", "S106"]
