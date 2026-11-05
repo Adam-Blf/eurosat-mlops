@@ -1,0 +1,44 @@
+{
+  "status": "ok",
+  "samples": 300,
+  "alpha": 0.01,
+  "threshold": 0.002,
+  "drifted_features": [],
+  "features": {
+    "brightness": {
+      "ks_statistic": 0.043,
+      "p_value": 0.7038645795796705,
+      "drifted": false,
+      "reference_mean": 0.3781,
+      "current_mean": 0.3744
+    },
+    "mean_r": {
+      "ks_statistic": 0.0403,
+      "p_value": 0.7742714889708372,
+      "drifted": false,
+      "reference_mean": 0.3454,
+      "current_mean": 0.3416
+    },
+    "mean_g": {
+      "ks_statistic": 0.0332,
+      "p_value": 0.92727866275235,
+      "drifted": false,
+      "reference_mean": 0.3809,
+      "current_mean": 0.3782
+    },
+    "mean_b": {
+      "ks_statistic": 0.05,
+      "p_value": 0.5158688984079007,
+      "drifted": false,
+      "reference_mean": 0.408,
+      "current_mean": 0.4034
+    },
+    "contrast": {
+      "ks_statistic": 0.0697,
+      "p_value": 0.15171198381001005,
+      "drifted": false,
+      "reference_mean": 0.0949,
+      "current_mean": 0.093
+    }
+  }
+}
