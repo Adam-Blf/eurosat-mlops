@@ -30,3 +30,22 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev]"
       - run: pytest -q
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build every image
+        run: docker compose build
+      - name: Start the whole stack with one command
+        run: docker compose up -d --wait --wait-timeout 300
+      - name: Smoke test through the gateway
+        run: |
+          test "$(curl -s -o /dev/null -w '%{http_code}' -F file=@loadtest/samples/Forest.jpg http://127.0.0.1:8080/api/predict)" = 401
+          curl -sf -H "Authorization: Bearer demo-token-alice" -F file=@loadtest/samples/Forest.jpg \
+            http://127.0.0.1:8080/api/predict | tee /dev/stderr | grep -q '"label":"Forest"'
+          curl -sf -H "Authorization: Bearer demo-token-alice" http://127.0.0.1:8080/api/usage | grep -q alice
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail 80
+      - run: docker compose down -v
