@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Data, tracking and model weights (the shipped release model is allowed below)
+data/
+mlruns/
+mlartifacts/
+mlflow.db
+*.pt
+*.pth
+*.onnx
+!models/release/*.onnx
+
+# Secrets
+.env
+.env.*
+!.env.example
+*secret*
+*.token
+ghp_*
+*.pem
+*.key
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Local runtime
+*.sqlite
+*.db
