@@ -13,7 +13,7 @@ from deploy import (
 )
 
 GOOD = (
-    "API_TOKENS=alice:Zk3q9\nADMIN_TOKEN=Yt8w2\nPOSTGRES_PASSWORD=Pq7r1\n"
+    "API_TOKENS=alice:fixture-client\nADMIN_TOKEN=fixture-admin\nPOSTGRES_PASSWORD=fixture-db\n"
     "DOMAIN=eurosat.example.org\n"
 )
 TARGET = Target(host="203.0.113.10", key=Path("id_test"), known_hosts=Path("known_test"))
@@ -36,9 +36,9 @@ def test_missing_variable_is_refused(drop):
 
 def test_demo_and_placeholder_secrets_are_refused():
     with pytest.raises(DeployError, match="placeholder"):
-        validate_env(GOOD.replace("Yt8w2", "demo-token-admin"))
+        validate_env(GOOD.replace("fixture-admin", "demo-token-admin"))
     with pytest.raises(DeployError, match="placeholder"):
-        validate_env(GOOD.replace("Pq7r1", "change-me-db"))
+        validate_env(GOOD.replace("fixture-db", "change-me-db"))
 
 
 def test_plan_pins_the_version_and_the_host_key():
@@ -55,6 +55,6 @@ def test_secrets_never_appear_in_any_command():
         " ".join(c)
         for c in [*plan(TARGET, "1.0.0"), write_env_command(TARGET), health_command(TARGET)]
     )
-    for secret in ("Zk3q9", "Yt8w2", "Pq7r1"):
+    for secret in ("fixture-client", "fixture-admin", "fixture-db"):
         assert secret not in everything
     assert "umask 077" in everything

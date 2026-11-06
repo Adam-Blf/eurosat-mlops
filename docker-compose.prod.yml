@@ -4,7 +4,7 @@
 services:
   postgres:
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}  # ggignore: env reference, no value
 
   api:
     environment:

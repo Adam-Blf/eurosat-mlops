@@ -1,9 +1,9 @@
 """Keep the version consistent: pyproject.toml is the source of truth.
 
-    python scripts/sync_version.py --check          # README badge and CHANGELOG agree (CI, tests)
-    python scripts/sync_version.py --write          # rewrite the README badge from pyproject
-    python scripts/sync_version.py --tag v1.0.0     # release workflow: the tag must match
-    python scripts/sync_version.py --notes 1.0.0    # print that version's CHANGELOG section
+python scripts/sync_version.py --check          # README badge and CHANGELOG agree (CI, tests)
+python scripts/sync_version.py --write          # rewrite the README badge from pyproject
+python scripts/sync_version.py --tag v1.0.0     # release workflow: the tag must match
+python scripts/sync_version.py --notes 1.0.0    # print that version's CHANGELOG section
 """
 
 from __future__ import annotations
