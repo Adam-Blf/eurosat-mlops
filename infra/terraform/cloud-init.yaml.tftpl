@@ -1,0 +1,31 @@
+#cloud-config
+# First boot: a non-root deploy user, Docker with the compose plugin, SSH hardened.
+package_update: true
+package_upgrade: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - unattended-upgrades
+  - fail2ban
+
+users:
+  - name: deploy
+    groups: [docker]
+    shell: /bin/bash
+    sudo: false
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-hardening.conf
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      AllowUsers deploy
+
+runcmd:
+  - mkdir -p /opt/eurosat
+  - chown deploy:deploy /opt/eurosat
+  - systemctl enable --now docker fail2ban
+  - systemctl restart ssh

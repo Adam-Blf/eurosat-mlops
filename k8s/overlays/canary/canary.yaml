@@ -1,0 +1,95 @@
+# Canary track: one pod that loads the registry alias "candidate" instead of "production".
+# ingress-nginx sends canary-weight percent of the traffic to it, and any request carrying
+# the header X-Canary: always. Promote by moving the production alias, then delete this overlay.
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-canary
+spec:
+  selector:
+    app: eurosat-api
+    track: canary
+  ports:
+    - port: 8000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eurosat-api
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: eurosat-api
+        track: canary
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: ghcr.io/adam-blf/eurosat-api
+          envFrom:
+            - configMapRef:
+                name: eurosat-config
+            - secretRef:
+                name: eurosat-secrets
+          env:
+            - name: MODEL_ALIAS
+              value: candidate
+          ports:
+            - containerPort: 8000
+          readinessProbe:
+            httpGet: { path: /ready, port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 8000 }
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 250m, memory: 256Mi }
+            limits: { cpu: "1", memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: eurosat-canary
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "10"
+    nginx.ingress.kubernetes.io/canary-by-header: X-Canary
+    nginx.ingress.kubernetes.io/proxy-body-size: 2m
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: eurosat.localtest.me
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-canary
+                port:
+                  number: 8000

@@ -1,0 +1,47 @@
+# Production override: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Images come from GHCR at an exact version, secrets must be provided (no demo defaults),
+# and Caddy terminates TLS in front of the gateway.
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}  # ggignore: env reference, no value
+
+  api:
+    environment:
+      API_TOKENS: ${API_TOKENS:?set API_TOKENS in .env}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN in .env}
+      CORS_ORIGINS: https://${DOMAIN:?set DOMAIN in .env}
+    image: ghcr.io/adam-blf/eurosat-api:${EUROSAT_VERSION:?set EUROSAT_VERSION}
+
+  registrar:
+    image: ghcr.io/adam-blf/eurosat-api:${EUROSAT_VERSION:?set EUROSAT_VERSION}
+
+  mlflow:
+    image: ghcr.io/adam-blf/eurosat-mlflow:${EUROSAT_VERSION:?set EUROSAT_VERSION}
+    ports: !reset []
+
+  gateway:
+    image: ghcr.io/adam-blf/eurosat-gateway:${EUROSAT_VERSION:?set EUROSAT_VERSION}
+
+  prometheus:
+    ports: !reset []
+
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      - gateway
+
+volumes:
+  caddydata:

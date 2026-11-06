@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+spec:
+  selector:
+    app: mlflow
+  ports:
+    - port: 5000
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlartifacts
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mlflow
+          image: ghcr.io/adam-blf/eurosat-mlflow
+          args:
+            - mlflow
+            - server
+            - --host=0.0.0.0
+            - --port=5000
+            - --backend-store-uri=$(MLFLOW_BACKEND_URI)
+            - --artifacts-destination=/mlartifacts
+            - --serve-artifacts
+            - --allowed-hosts=mlflow:5000,mlflow,mlflow.eurosat.svc.cluster.local:5000,mlflow.eurosat.svc.cluster.local
+          env:
+            - name: MLFLOW_BACKEND_URI
+              valueFrom:
+                secretKeyRef:
+                  name: eurosat-secrets
+                  key: MLFLOW_BACKEND_URI
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet: { path: /health, port: 5000 }
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 768Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: artifacts
+              mountPath: /mlartifacts
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: artifacts
+          persistentVolumeClaim:
+            claimName: mlartifacts
+        - name: tmp
+          emptyDir: {}

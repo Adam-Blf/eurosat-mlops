@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: eurosat
+
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - mlflow.yaml
+  - registry-job.yaml
+  - api.yaml
+  - gateway.yaml
+  - ingress.yaml
+
+configMapGenerator:
+  - name: eurosat-config
+    literals:
+      - MODEL_SOURCE=mlflow
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MODEL_NAME=eurosat-classifier
+      - MODEL_ALIAS=production
+      - CORS_ORIGINS=http://eurosat.localtest.me
+      - RATE_LIMIT_PER_MINUTE=1200
+
+# Real values come from secrets.env (gitignored). Copy secrets.env.example to start.
+secretGenerator:
+  - name: eurosat-secrets
+    envs:
+      - secrets.env
+
+images:
+  - name: ghcr.io/adam-blf/eurosat-api
+    newTag: "1.0.0"
+  - name: ghcr.io/adam-blf/eurosat-gateway
+    newTag: "1.0.0"
+  - name: ghcr.io/adam-blf/eurosat-mlflow
+    newTag: "1.0.0"
