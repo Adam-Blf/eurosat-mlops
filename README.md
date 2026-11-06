@@ -12,6 +12,8 @@ Mise en production d'un classifieur d'occupation des sols sur images satellite S
 
 Le modèle est un ResNet18 affiné, exporté en ONNX puis quantifié en int8. Il est servi par une API FastAPI protégée par jeton, versionné dans MLflow, surveillé par un détecteur de dérive et Prometheus, et déployable en une commande sur une VM créée par Terraform ou sur Kubernetes avec un canary.
 
+**Rapport** : [`reports/rapport-eurosat-mlops.pdf`](reports/rapport-eurosat-mlops.pdf), 10 pages, généré par `python -m eurosat_mlops.report` (`pip install -e ".[report]"`) à partir des fichiers de résultats du dépôt et vérifié par `python scripts/check_report.py`.
+
 ## Résultats
 
 | Modèle | Taille (Mo) | Accuracy | F1 macro | Médiane ms (batch 1) | p95 ms | Accélération |
@@ -164,7 +166,7 @@ Sans GPU local, le notebook [`notebooks/train_colab.ipynb`](notebooks/train_cola
 
 ```bash
 pip install -e ".[dev,loadtest]"
-pytest                     # 55 tests, dont auth, usage, dérive, déploiement, quantization
+pytest                     # 58 tests, dont auth, usage, dérive, déploiement, quantization
 ruff check .
 python scripts/sync_version.py --check
 ```
