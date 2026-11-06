@@ -1,0 +1,23 @@
+# For a k3d or kind cluster: images built locally and imported, lower CPU request.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+images:
+  - name: ghcr.io/adam-blf/eurosat-api
+    newTag: local
+  - name: ghcr.io/adam-blf/eurosat-gateway
+    newTag: local
+  - name: ghcr.io/adam-blf/eurosat-mlflow
+    newTag: local
+
+patches:
+  - target:
+      kind: Deployment
+      name: api-stable
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 100m

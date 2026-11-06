@@ -1,0 +1,46 @@
+# Seeds an empty registry with the model shipped in the image and sets the production alias.
+# Idempotent: when the alias already exists the job does nothing.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: registry-bootstrap
+spec:
+  backoffLimit: 20
+  template:
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bootstrap
+          image: ghcr.io/adam-blf/eurosat-api
+          command:
+            - python
+            - -m
+            - eurosat_mlops.registry
+            - bootstrap
+            - --tracking-uri=http://mlflow:5000
+            - --onnx=models/release/eurosat_int8.onnx
+            - --reference=models/release/reference_stats.json
+            - --metrics=models/release/metrics.json
+            - --note=release
+          env:
+            - name: HOME
+              value: /tmp
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
