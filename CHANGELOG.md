@@ -4,6 +4,9 @@ All notable changes are listed here. Format follows Keep a Changelog, versions f
 
 ## [Unreleased]
 
+### Changed
+- `scripts/check_report.py` refuses placeholder text (« texte de test », « lorem ipsum », « TODO », a lone « Test. »), seen red on a trap PDF.
+
 ## [1.1.0] - 2026-11-06
 
 ### Added

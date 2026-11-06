@@ -29,6 +29,12 @@ ALLOWED_FONTS = ("Epilogue", "OverpassMono")
 # Code points rather than characters, so this file passes its own typography rule.
 FORBIDDEN_CHARS = {chr(0x2014): "em dash", chr(0x2013): "en dash", chr(0x00B7): "middle dot"}
 FORBIDDEN_WORDS = ("Claude", "Anthropic", "ChatGPT", "Copilot")
+# Layout fillers pass every geometric check: the sister project shipped a cover with a
+# test summary and a one-word conclusion while its checker was green. Refuse them.
+PLACEHOLDERS = re.compile(
+    r"texte de test|paragraphe de test|lorem ipsum|\bTODO\b|\bTBD\b|^\s*Test\.\s*$",
+    re.I | re.M,
+)
 DEFAULT_PDF = Path("reports/rapport-eurosat-mlops.pdf")
 
 
@@ -71,6 +77,10 @@ def check(pdf: Path) -> list[str]:
     for number, page in enumerate(doc, start=1):
         text = page.get_text()
         errors += [f"page {number}: {name}" for ch, name in FORBIDDEN_CHARS.items() if ch in text]
+        errors += [
+            f"page {number}: placeholder {m.group(0).strip()!r}"
+            for m in PLACEHOLDERS.finditer(text)
+        ]
         errors += [
             f"page {number}: forbidden word {w!r}"
             for w in FORBIDDEN_WORDS
