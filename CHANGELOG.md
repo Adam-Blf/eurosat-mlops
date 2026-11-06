@@ -4,6 +4,9 @@ All notable changes are listed here. Format follows Keep a Changelog, versions f
 
 ## [Unreleased]
 
+### Fixed
+- Release workflow no longer fails when no PDF report is present in `reports/`.
+
 ## [1.0.0] - 2026-11-06
 
 ### Added
