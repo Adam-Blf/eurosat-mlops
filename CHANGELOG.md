@@ -4,6 +4,8 @@ All notable changes are listed here. Format follows Keep a Changelog, versions f
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-06
+
 ### Added
 - PDF project report built with FPDF2 (`python -m eurosat_mlops.report`, output `reports/rapport-eurosat-mlops.pdf`), drawn from the committed result files, with Epilogue and Overpass Mono vendored as OFL TTF files and the EFREI logos.
 - `scripts/check_report.py`: page count, empty bottom areas above 40 mm, embedded fonts, forbidden characters and words.
