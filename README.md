@@ -1,7 +1,7 @@
 # eurosat-mlops
 
 <!-- adam-badges:start -->
-[![version](https://img.shields.io/badge/version-1.0.0-163767?style=flat-square)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-1.1.0-163767?style=flat-square)](CHANGELOG.md)
 [![CI](https://img.shields.io/github/actions/workflow/status/Adam-Blf/eurosat-mlops/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/Adam-Blf/eurosat-mlops/actions/workflows/ci.yml)
 [![last commit](https://img.shields.io/github/last-commit/Adam-Blf/eurosat-mlops?color=D4A437&style=flat-square&label=dernier%20push)](https://github.com/Adam-Blf/eurosat-mlops/commits)
 [![license](https://img.shields.io/github/license/Adam-Blf/eurosat-mlops?style=flat-square&color=D4A437)](LICENSE)
