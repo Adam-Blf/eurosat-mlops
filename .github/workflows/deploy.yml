@@ -1,0 +1,51 @@
+name: deploy
+
+# Continuous delivery to the production VM. Runs when a release is published or by hand,
+# behind the "production" environment (add required reviewers there for a manual gate).
+# The job is skipped until the repository variable DEPLOY_ENABLED is set to true, so a fork or a
+# repository without a VM stays green. Secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_KNOWN_HOSTS, PROD_ENV.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image version to deploy, for example 1.0.0"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Deploy over SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          VERSION: ${{ inputs.version || github.event.release.tag_name }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          PROD_ENV: ${{ secrets.PROD_ENV }}
+        run: |
+          umask 077
+          printf '%s\n' "$SSH_KEY" > "$RUNNER_TEMP/id"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/known_hosts"
+          printf '%s\n' "$PROD_ENV" > "$RUNNER_TEMP/prod.env"
+          export DEPLOY_SSH_KEY="$RUNNER_TEMP/id" DEPLOY_KNOWN_HOSTS="$RUNNER_TEMP/known_hosts"
+          export DEPLOY_ENV_FILE="$RUNNER_TEMP/prod.env"
+          python scripts/deploy.py --version "${VERSION#v}"
+      - name: Remove secrets from the runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/id" "$RUNNER_TEMP/known_hosts" "$RUNNER_TEMP/prod.env"
